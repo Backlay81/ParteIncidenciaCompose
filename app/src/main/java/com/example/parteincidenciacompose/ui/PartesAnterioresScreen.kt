@@ -42,6 +42,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.parteincidenciacompose.data.ParteEntity
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,6 +72,25 @@ fun PartesAnterioresScreen(
     
     // Combinar los finalizados con los activos únicos
     val partes = partesFinalizados + partesActivosUnicos
+
+    // Agrupar partes por mes y año
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    val monthYearFormat = SimpleDateFormat("MMMM yyyy", Locale("es"))
+    val partesOrdenados = partes.sortedByDescending { parte ->
+        try { dateFormat.parse(parte.fechaHoraInicio) } catch (e: Exception) { Date(0) }
+    }
+    val ultimos3Partes = partesOrdenados.take(3)
+    val idsUltimos3 = ultimos3Partes.map { it.id }.toSet()
+    val partesRestantes = partesOrdenados.drop(3)
+    val partesAgrupados = partesRestantes
+        .groupBy { parte ->
+            val date = try { dateFormat.parse(parte.fechaHoraInicio) } catch (e: Exception) { Date(0) }
+            monthYearFormat.format(date ?: Date(0)).replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+        }
+
+    // Estado para controlar qué grupos están expandidos
+    val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }
+    var recientesExpanded by remember { mutableStateOf(true) }
     
     var parteAEliminar by remember { mutableStateOf<ParteEntity?>(null) }
 
@@ -128,12 +154,81 @@ fun PartesAnterioresScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(partes) { parte ->
-                        ParteCardModern2(
-                            parte = parte,
-                            onEliminar = { parteAEliminar = parte },
-                            onDetalle = { onVerDetalle(parte.id) }
-                        )
+                    // Mostrar los últimos 5 partes siempre expandidos
+                    if (ultimos3Partes.isNotEmpty()) {
+                        item {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { recientesExpanded = !recientesExpanded }
+                                    .padding(vertical = 8.dp)
+                                    .animateContentSize(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Recientes",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Icon(
+                                    imageVector = if (recientesExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                                    contentDescription = if (recientesExpanded) "Colapsar" else "Expandir",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        if (recientesExpanded) {
+                            items(ultimos3Partes) { parte ->
+                                ParteCardModern2(
+                                    parte = parte,
+                                    onEliminar = { parteAEliminar = parte },
+                                    onDetalle = { onVerDetalle(parte.id) }
+                                )
+                            }
+                        }
+                    }
+                    // Mostrar el resto agrupado y colapsable
+                    partesAgrupados.forEach { (mesAnio, partesGrupo) ->
+                        // Si algún parte de este grupo está en los últimos 3, mostrar expandido
+                        val tieneRecientes = partesGrupo.any { idsUltimos3.contains(it.id) }
+                        val expanded = expandedGroups.getOrPut(mesAnio) { tieneRecientes }
+                        item {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        expandedGroups[mesAnio] = !(expandedGroups[mesAnio] ?: false)
+                                    }
+                                    .padding(vertical = 8.dp)
+                                    .animateContentSize(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = mesAnio,
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Icon(
+                                    imageVector = if (expandedGroups[mesAnio] == true) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                                    contentDescription = if (expandedGroups[mesAnio] == true) "Colapsar" else "Expandir",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        if (expandedGroups[mesAnio] == true) {
+                            items(partesGrupo) { parte ->
+                                // Evitar mostrar duplicados si ya está en recientes
+                                if (!idsUltimos3.contains(parte.id)) {
+                                    ParteCardModern2(
+                                        parte = parte,
+                                        onEliminar = { parteAEliminar = parte },
+                                        onDetalle = { onVerDetalle(parte.id) }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
