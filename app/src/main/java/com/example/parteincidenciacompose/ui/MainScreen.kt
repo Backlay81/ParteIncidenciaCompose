@@ -17,7 +17,8 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun MainScreen(
     onNuevoParteClick: () -> Unit,
-    onVerPartesAnterioresClick: () -> Unit
+    onVerPartesAnterioresClick: () -> Unit,
+    onHorasClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -42,7 +43,7 @@ fun MainScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = 2.dp),
                 elevation = CardDefaults.cardElevation(4.dp),
                 shape = MaterialTheme.shapes.medium
             ) {
@@ -63,7 +64,8 @@ fun MainScreen(
             }
             Card(
                 modifier = Modifier
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
                 elevation = CardDefaults.cardElevation(4.dp),
                 shape = MaterialTheme.shapes.medium
             ) {
@@ -82,6 +84,27 @@ fun MainScreen(
                     )
                 }
             }
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(4.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Button(
+                    onClick = onHorasClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = azulito)
+                ) {
+                    Text(
+                        text = "Horas",
+                        color = textoBlanco,
+                        fontSize = 18.sp,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+            }
         }
     }
-    }
+}

@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.material3.Text
 import com.example.parteincidenciacompose.ui.MainScreen
 import com.example.parteincidenciacompose.ui.theme.ParteIncidenciaComposeTheme
 import com.example.parteincidenciacompose.ui.NuevoParteScreen
@@ -39,7 +40,13 @@ fun NavHostScreen() {
         composable("main") {
             MainScreen(
                 onNuevoParteClick = { navController.navigate("nuevo_parte") },
-                onVerPartesAnterioresClick = { navController.navigate("partes_anteriores") }
+                onVerPartesAnterioresClick = { navController.navigate("partes_anteriores") },
+                onHorasClick = { navController.navigate("horas") }
+            )
+        }
+        composable("horas") {
+            com.example.parteincidenciacompose.ui.HorasScreen(
+                onBack = { navController.popBackStack() }
             )
         }
         composable("nuevo_parte") {
