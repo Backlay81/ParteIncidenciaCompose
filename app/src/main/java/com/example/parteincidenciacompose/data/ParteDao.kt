@@ -1,5 +1,6 @@
 package com.example.parteincidenciacompose.data
 
+import androidx.room.Update
 import com.example.parteincidenciacompose.data.ParteEntity
 import androidx.room.Dao
 import androidx.room.Insert
@@ -20,5 +21,8 @@ interface ParteDao {
 
     @Query("UPDATE partes SET kmsFinales = :kmsFinales WHERE id = :id")
     suspend fun updateKmsFinales(id: Int, kmsFinales: String)
+
+    @Update
+    suspend fun updateParte(parte: ParteEntity)
 }
 

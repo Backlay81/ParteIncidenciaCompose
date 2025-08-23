@@ -15,5 +15,6 @@ data class ParteEntity(
     val kmsFinales: String,
     val fechaHoraInicio: String,
     val tareasJson: String,
-    val incidenciasJson: String
+    val incidenciasJson: String,
+    val estado: String = "EN_CURSO" // Puede ser "EN_CURSO" o "FINALIZADO"
 )

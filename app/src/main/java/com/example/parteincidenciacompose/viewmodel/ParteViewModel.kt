@@ -14,9 +14,12 @@ class ParteViewModel(application: Application) : AndroidViewModel(application) {
     fun finalizarParte(parte: ParteEntity, kmsFinales: String) {
         android.util.Log.d("ParteViewModel", "Finalizando parte: $parte con kmsFinales=$kmsFinales")
         viewModelScope.launch {
-            val parteFinalizado = parte.copy(kmsFinales = kmsFinales)
-            android.util.Log.d("ParteViewModel", "Insertando parte finalizado: $parteFinalizado")
-            repository.insertParte(parteFinalizado)
+            val parteFinalizado = parte.copy(
+                kmsFinales = kmsFinales,
+                estado = "FINALIZADO" // Siempre asegurar que el estado es FINALIZADO
+            )
+            android.util.Log.d("ParteViewModel", "Actualizando parte finalizado: $parteFinalizado")
+            repository.updateParte(parteFinalizado)
             loadPartes()
         }
     }
@@ -39,7 +42,14 @@ class ParteViewModel(application: Application) : AndroidViewModel(application) {
     fun insertParte(parte: ParteEntity) {
         android.util.Log.d("ParteViewModel", "Insertando parte: $parte")
         viewModelScope.launch {
-            repository.insertParte(parte)
+            // Si el parte ya existe y está finalizado, mantener el estado FINALIZADO
+            val existente = _partes.value.find { it.id == parte.id }
+            val estadoFinal = when {
+                existente?.estado == "FINALIZADO" -> "FINALIZADO"
+                else -> parte.estado
+            }
+            val parteAGuardar = parte.copy(estado = estadoFinal)
+            repository.insertParte(parteAGuardar)
             loadPartes()
         }
     }

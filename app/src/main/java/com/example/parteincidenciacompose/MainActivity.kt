@@ -41,7 +41,17 @@ fun NavHostScreen() {
             MainScreen(
                 onNuevoParteClick = { navController.navigate("nuevo_parte") },
                 onVerPartesAnterioresClick = { navController.navigate("partes_anteriores") },
-                onHorasClick = { navController.navigate("horas") }
+                onHorasClick = { navController.navigate("horas") },
+                onCapturaMatriculaClick = { navController.navigate("captura_matricula") }
+            )
+        }
+        composable("captura_matricula") {
+            com.example.parteincidenciacompose.ui.CapturaMatriculaScreen(
+                onBack = { navController.popBackStack() },
+                onMatriculaDetected = { matricula ->
+                    // For now just navigate back; later we can pass data via Nav args or shared ViewModel
+                    navController.popBackStack()
+                }
             )
         }
         composable("horas") {

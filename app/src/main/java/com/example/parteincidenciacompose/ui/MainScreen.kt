@@ -18,7 +18,8 @@ import androidx.compose.ui.unit.sp
 fun MainScreen(
     onNuevoParteClick: () -> Unit,
     onVerPartesAnterioresClick: () -> Unit,
-    onHorasClick: () -> Unit
+    onHorasClick: () -> Unit,
+    onCapturaMatriculaClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -99,6 +100,28 @@ fun MainScreen(
                 ) {
                     Text(
                         text = "Horas",
+                        color = textoBlanco,
+                        fontSize = 18.sp,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(4.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Button(
+                    onClick = onCapturaMatriculaClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = azulito)
+                ) {
+                    Text(
+                        text = "Capturar Matrícula",
                         color = textoBlanco,
                         fontSize = 18.sp,
                         modifier = Modifier.padding(8.dp)

@@ -72,6 +72,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.ui.text.input.KeyboardType
 
+import androidx.compose.material3.AlertDialog
+
 
 // ...existing code...
 
@@ -101,15 +103,22 @@ fun ParteActivoScreen(
     var kmsFinales by remember { mutableStateOf("") }
     var kmsFinalesState by remember { mutableStateOf("") }
 
+    // Estado para el diálogo de confirmación al retroceder
+    var showBackDialog by remember { mutableStateOf(false) }
+    var pendingBack by remember { mutableStateOf(false) }
+
     // Cargar parte activo desde Room al iniciar
     LaunchedEffect(Unit) {
         parteViewModel.loadPartes()
+        // Añadir registro
+        android.util.Log.d("ParteActivoScreen", "LaunchedEffect: cargando partes, ID=$parteId")
     }
     val partes by parteViewModel.partes.collectAsState()
-    // ...existing code...
-    val parteSeleccionada = if (parteId != null) partes.firstOrNull { it.id == parteId } else null
+    // Solo cargar partes si se proporciona un ID
+    val parteSeleccionada = if (parteId != null && parteId > 0) partes.firstOrNull { it.id == parteId } else null
+    // Verificamos si está finalizado revisando el estado del parte
     val esFinalizado =
-        remember(parteSeleccionada) { parteSeleccionada?.kmsFinales?.isNotBlank() ?: false }
+        remember(parteSeleccionada) { parteSeleccionada?.estado == "FINALIZADO" }
     var unidadState by remember { mutableStateOf(if (parteSeleccionada != null) parteSeleccionada.unidad else unidad) }
     var agenteState by remember { mutableStateOf(if (parteSeleccionada != null) parteSeleccionada.agente else agente) }
     var vehiculoState by remember { mutableStateOf(if (parteSeleccionada != null) parteSeleccionada.vehiculo else vehiculo) }
@@ -131,8 +140,22 @@ fun ParteActivoScreen(
         )
     }
 
+    // Detección de cambios
+    val parteOriginal = parteSeleccionada
+    val hayCambios = remember(parteOriginal, unidadState, agenteState, vehiculoState, kmsState, fechaHoraState, tareas, incidencias) {
+        if (parteOriginal == null) return@remember false
+        parteOriginal.unidad != unidadState ||
+        parteOriginal.agente != agenteState ||
+        parteOriginal.vehiculo != vehiculoState ||
+        parteOriginal.kmsIniciales != kmsState ||
+        parteOriginal.fechaHoraInicio != fechaHoraState ||
+        ParteConverters.tareasFromJson(parteOriginal.tareasJson) != tareas ||
+        ParteConverters.incidenciasFromJson(parteOriginal.incidenciasJson) != incidencias
+    }
+
     // Si cambia el parte seleccionado, actualizar los estados
     LaunchedEffect(parteSeleccionada) {
+        android.util.Log.d("ParteActivoScreen", "LaunchedEffect(parteSeleccionada): parteId=$parteId, parte=${parteSeleccionada?.id}, estado=${parteSeleccionada?.estado}")
         if (parteSeleccionada != null) {
             unidadState = parteSeleccionada.unidad
             agenteState = parteSeleccionada.agente
@@ -144,6 +167,8 @@ fun ParteActivoScreen(
             tareas = ParteConverters.tareasFromJson(parteSeleccionada.tareasJson)
             incidencias = ParteConverters.incidenciasFromJson(parteSeleccionada.incidenciasJson)
         } else if (parteId == null) {
+            // Solo inicializar con valores nuevos si realmente estamos creando un parte nuevo
+            // y no cargando uno existente
             unidadState = unidad
             agenteState = agente
             vehiculoState = vehiculo
@@ -152,6 +177,10 @@ fun ParteActivoScreen(
             parteActivoId = null
             tareas = listOf()
             incidencias = listOf()
+            android.util.Log.d("ParteActivoScreen", "Inicializando nuevo parte con unidad=$unidad, agente=$agente")
+        } else {
+            // Si tenemos parteId pero no encontramos el parte, reportar error
+            android.util.Log.e("ParteActivoScreen", "ERROR: No se encontró parte con ID=$parteId")
         }
     }
 
@@ -160,16 +189,20 @@ fun ParteActivoScreen(
     fun guardarParteActivo() {
         // Si ya hay un parte activo (id != null y != 0), actualiza ese parte
         // Si no, crea uno nuevo (id = 0 para que Room lo autogenere)
+        // Si el parte ya estaba finalizado, mantenerlo como FINALIZADO aunque se edite
+        val estadoActual = if (parteSeleccionada?.estado == "FINALIZADO") "FINALIZADO" else parteSeleccionada?.estado ?: "EN_CURSO"
+        val kmsFinalesActual = if (estadoActual == "FINALIZADO") parteSeleccionada?.kmsFinales ?: "" else ""
         val parteEntity = ParteEntity(
             id = parteActivoId ?: 0,
             unidad = unidadState,
             agente = agenteState,
             vehiculo = vehiculoState,
             kmsIniciales = kmsState,
-            kmsFinales = "", // activo
+            kmsFinales = kmsFinalesActual,
             fechaHoraInicio = fechaHoraState,
             tareasJson = ParteConverters.tareasToJson(tareas),
-            incidenciasJson = ParteConverters.incidenciasToJson(incidencias)
+            incidenciasJson = ParteConverters.incidenciasToJson(incidencias),
+            estado = estadoActual
         )
         if (parteActivoId != null && parteActivoId != 0) {
             // Actualiza el parte existente (Room REPLACE por id)
@@ -182,7 +215,13 @@ fun ParteActivoScreen(
     }
 
     LaunchedEffect(tareas, incidencias) {
-        guardarParteActivo()
+        // Solo guardar automáticamente si no es un parte finalizado
+        if (parteSeleccionada?.estado != "FINALIZADO") {
+            android.util.Log.d("ParteActivoScreen", "LaunchedEffect(tareas, incidencias): guardando parte automáticamente, ID=${parteActivoId}")
+            guardarParteActivo()
+        } else {
+            android.util.Log.d("ParteActivoScreen", "LaunchedEffect(tareas, incidencias): parte finalizado, no se guarda automáticamente")
+        }
     }
     var tareaAEliminar by remember { mutableStateOf<Int?>(null) }
     var tareaAEditar by remember { mutableStateOf<Int?>(null) }
@@ -193,6 +232,28 @@ fun ParteActivoScreen(
     var resolucionDescripcion by remember { mutableStateOf("") }
     var resolucionHora by remember { mutableStateOf("") }
     Surface(modifier = Modifier.fillMaxSize()) {
+        if (showBackDialog) {
+            AlertDialog(
+                onDismissRequest = { showBackDialog = false; pendingBack = false },
+                title = { Text("Hay cambios sin guardar") },
+                text = { Text("¿Quieres guardar los cambios antes de salir?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        guardarParteActivo()
+                        showBackDialog = false
+                        pendingBack = false
+                        onBackToMain()
+                    }) { Text("Guardar") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showBackDialog = false
+                        pendingBack = false
+                        onBackToMain()
+                    }) { Text("Descartar") }
+                }
+            )
+        }
         androidx.compose.material3.Scaffold(
             topBar = {
                 androidx.compose.material3.TopAppBar(
@@ -204,7 +265,14 @@ fun ParteActivoScreen(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = onBackToMain) {
+                        IconButton(onClick = {
+                            if (hayCambios) {
+                                showBackDialog = true
+                                pendingBack = true
+                            } else {
+                                onBackToMain()
+                            }
+                        }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Volver a principal",
@@ -293,6 +361,18 @@ fun ParteActivoScreen(
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(top = 2.dp)
                             )
+                        }
+                    }
+                    // Botón Guardar solo si hay cambios
+                    if (hayCambios) {
+                        Button(
+                            onClick = { guardarParteActivo() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C)),
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 4.dp)
+                        ) {
+                            Text("Guardar", color = textoBlanco)
                         }
                     }
                 }
@@ -1064,9 +1144,8 @@ fun ParteActivoScreen(
                                                     kmsFinales = kmsFinales,
                                                     fechaHoraInicio = fechaHoraState,
                                                     tareasJson = ParteConverters.tareasToJson(tareas),
-                                                    incidenciasJson = ParteConverters.incidenciasToJson(
-                                                        incidencias
-                                                    )
+                                                    incidenciasJson = ParteConverters.incidenciasToJson(incidencias),
+                                                    estado = "FINALIZADO"
                                                 )
                                                 android.util.Log.d(
                                                     "ParteActivoScreen",

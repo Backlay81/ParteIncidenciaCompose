@@ -19,4 +19,8 @@ class ParteRepository(private val parteDao: ParteDao) {
     suspend fun deleteParteById(id: Int) = withContext(Dispatchers.IO) {
         parteDao.deleteParteById(id)
     }
+
+    suspend fun updateParte(parte: ParteEntity) = withContext(Dispatchers.IO) {
+        parteDao.updateParte(parte)
+    }
 }

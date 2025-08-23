@@ -66,17 +66,23 @@ fun PartesAnterioresScreen(
     // Obtener todos los partes y eliminar duplicados manteniendo solo uno por cada conjunto de datos principales
     val partesAll = parteViewModel.partes.collectAsState().value
     
-    // Separar partes finalizados (con kmsFinales) y activos
-    val partesFinalizados = partesAll.filter { it.kmsFinales.isNotBlank() }
-    val partesActivos = partesAll.filter { it.kmsFinales.isBlank() }
-    
+    // Separar partes finalizados y activos usando el campo 'estado'
+    val partesFinalizados = partesAll.filter { it.estado == "FINALIZADO" }
+    val partesActivos = partesAll.filter { it.estado == "EN_CURSO" }
+
     // Para los partes activos, agrupar por unidad+agente+vehiculo+fecha y quedarnos solo con uno por grupo
+    // Esto previene duplicados
     val partesActivosUnicos = partesActivos
         .groupBy { it.unidad + it.agente + it.vehiculo + it.fechaHoraInicio }
         .map { (_, similares) -> similares.maxByOrNull { it.id } ?: similares.first() }
-    
+        
+    // Filtrar cualquier parte que esté vacío (datos incompletos)
+    val partesActivosFiltrados = partesActivosUnicos.filter { 
+        it.unidad.isNotBlank() && it.agente.isNotBlank() && it.vehiculo.isNotBlank() 
+    }
+
     // Combinar los finalizados con los activos únicos
-    val partes = partesFinalizados + partesActivosUnicos
+    val partes = partesFinalizados + partesActivosFiltrados
 
     // Agrupar partes por mes y año
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
@@ -269,7 +275,8 @@ fun ParteCardModern2(
     onEliminar: (() -> Unit)? = null,
     onDetalle: (() -> Unit)? = null
 ) {
-    val esFinalizado = parte.kmsFinales.trim().isNotBlank()
+    // Verificar estado directamente
+    val esFinalizado = parte.estado == "FINALIZADO"
     Card(
         modifier = Modifier
             .fillMaxWidth()
