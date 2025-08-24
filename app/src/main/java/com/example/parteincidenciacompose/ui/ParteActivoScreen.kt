@@ -254,7 +254,7 @@ fun ParteActivoScreen(
                 }
             )
         }
-        androidx.compose.material3.Scaffold(
+    androidx.compose.material3.Scaffold(
             topBar = {
                 androidx.compose.material3.TopAppBar(
                     title = {
@@ -288,11 +288,12 @@ fun ParteActivoScreen(
                 )
             },
             bottomBar = {
+                // Bottom action bar fixed by Scaffold
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(azulito)
-                        .height(2.dp)
+                        .height(110.dp)
                         .padding(horizontal = 4.dp)
                         .padding(WindowInsets.navigationBars.asPaddingValues()),
                     horizontalArrangement = Arrangement.SpaceEvenly
@@ -442,368 +443,131 @@ fun ParteActivoScreen(
                             }
                         }
                     }
-                    // Sección de Tareas
-                    Card(
+                    // Make central content scrollable while keeping header and bottom fixed
+                    LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        elevation = CardDefaults.cardElevation(2.dp)
+                            .weight(1f),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
                     ) {
-                        Column(modifier = Modifier.padding(0.dp)) {
-                            Row(
+                        item {
+                            // Sección de Tareas
+                            Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(azulito)
-                                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                                    .clickable { setTareasExpanded(!isTareasExpanded) },
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(vertical = 8.dp),
+                                elevation = CardDefaults.cardElevation(2.dp)
                             ) {
-                                Text(
-                                    "Tareas Pendientes",
-                                    fontWeight = FontWeight.Bold,
-                                    color = textoBlanco,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Text(
-                                    tareas.size.toString(),
-                                    color = textoBlanco,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
-                                Icon(
-                                    if (isTareasExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                                    contentDescription = null,
-                                    tint = textoBlanco,
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
-                            }
-                            if (isTareasExpanded) {
-                                if (tareas.isEmpty()) {
-                                    Text(
-                                        "No hay tareas pendientes",
+                                Column(modifier = Modifier.padding(0.dp)) {
+                                    Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(vertical = 16.dp, horizontal = 0.dp),
-                                        color = Color.Gray
-                                    )
-                                } else {
-                                    LazyColumn(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(8.dp),
-                                        contentPadding = PaddingValues(bottom = 96.dp)
+                                            .background(azulito)
+                                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                                            .clickable { setTareasExpanded(!isTareasExpanded) },
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        val tareasOrdenadas = tareas.sortedBy { it.hora }
-                                        items(tareasOrdenadas.size) { idx ->
-                                            val tarea = tareasOrdenadas[idx]
-                                            Card(
+                                        Text(
+                                            "Tareas Pendientes",
+                                            fontWeight = FontWeight.Bold,
+                                            color = textoBlanco,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Text(
+                                            tareas.size.toString(),
+                                            color = textoBlanco,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(start = 8.dp)
+                                        )
+                                        Icon(
+                                            if (isTareasExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                                            contentDescription = null,
+                                            tint = textoBlanco,
+                                            modifier = Modifier.padding(start = 8.dp)
+                                        )
+                                    }
+                                    if (isTareasExpanded) {
+                                        if (tareas.isEmpty()) {
+                                            Text(
+                                                "No hay tareas pendientes",
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .padding(vertical = 4.dp),
-                                                elevation = CardDefaults.cardElevation(1.dp),
-                                                colors = CardDefaults.cardColors(containerColor = Color.White)
+                                                    .padding(vertical = 16.dp, horizontal = 0.dp),
+                                                color = Color.Gray
+                                            )
+                                        } else {
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(8.dp)
                                             ) {
-                                                Box(modifier = Modifier.fillMaxWidth()) {
-                                                    Column(modifier = Modifier.padding(12.dp)) {
-                                                        Text(
-                                                            "Descripción: ${tarea.descripcion}",
-                                                            fontSize = 14.sp,
-                                                            color = Color.Black
-                                                        )
-                                                        if (tarea.observaciones.isNotBlank()) {
-                                                            Text(
-                                                                "Observaciones: ${tarea.observaciones}",
-                                                                fontSize = 14.sp,
-                                                                color = Color.Black
-                                                            )
-                                                        }
-                                                        Text(
-                                                            "Hora: ${tarea.hora}",
-                                                            fontSize = 14.sp,
-                                                            color = Color.Black
-                                                        )
-                                                    }
-                                                    Row(
-                                                        modifier = Modifier
-                                                            .align(Alignment.TopEnd)
-                                                            .padding(4.dp),
-                                                        horizontalArrangement = Arrangement.End
-                                                    ) {
-                                                        IconButton(onClick = {
-                                                            tareaACompletar = idx
-                                                            val horaActual = SimpleDateFormat(
-                                                                "HH:mm",
-                                                                Locale.getDefault()
-                                                            ).format(Date())
-                                                            resolucionHora = horaActual
-                                                            resolucionDescripcion = ""
-                                                        }) {
-                                                            Icon(
-                                                                Icons.Default.CheckCircle,
-                                                                contentDescription = "Completar",
-                                                                tint = Color(0xFF4CAF50)
-                                                            )
-                                                        }
-                                                        IconButton(onClick = {
-                                                            tareaAEditar = idx
-                                                        }) {
-                                                            Icon(
-                                                                Icons.Default.Edit,
-                                                                contentDescription = "Editar",
-                                                                tint = Color(0xFF1976D2)
-                                                            )
-                                                        }
-                                                        IconButton(onClick = {
-                                                            tareaAEliminar = idx
-                                                        }) {
-                                                            Icon(
-                                                                Icons.Default.Delete,
-                                                                contentDescription = "Eliminar",
-                                                                tint = Color.Red
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            if (tareaAEditar != null) {
-                                                val tarea = tareas[tareaAEditar!!]
-                                                var descripcion by remember { mutableStateOf(tarea.descripcion) }
-                                                var observaciones by remember { mutableStateOf(tarea.observaciones) }
-                                                var hora by remember { mutableStateOf(tarea.hora) }
-                                                Dialog(onDismissRequest = { tareaAEditar = null }) {
-                                                    Surface(
-                                                        shape = MaterialTheme.shapes.medium,
-                                                        color = Color.White,
-                                                        shadowElevation = 8.dp,
+                                                val tareasOrdenadas = tareas.sortedBy { it.hora }
+                                                tareasOrdenadas.forEachIndexed { idx, tarea ->
+                                                    Card(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
-                                                            .padding(16.dp)
-                                                            .border(
-                                                                2.dp,
-                                                                Color.Black,
-                                                                MaterialTheme.shapes.medium
-                                                            )
+                                                            .padding(vertical = 4.dp),
+                                                        elevation = CardDefaults.cardElevation(1.dp),
+                                                        colors = CardDefaults.cardColors(containerColor = Color.White)
                                                     ) {
-                                                        Column(modifier = Modifier.padding(16.dp)) {
-                                                            Text(
-                                                                "Editar Tarea",
-                                                                fontWeight = FontWeight.Bold,
-                                                                fontSize = 18.sp,
-                                                                modifier = Modifier.padding(bottom = 8.dp)
-                                                            )
-                                                            OutlinedTextField(
-                                                                value = descripcion,
-                                                                onValueChange = {
-                                                                    descripcion = it
-                                                                },
-                                                                label = { Text("Descripción") },
-                                                                modifier = Modifier.fillMaxWidth(),
-                                                                minLines = 2,
-                                                                maxLines = 4
-                                                            )
-                                                            OutlinedTextField(
-                                                                value = observaciones,
-                                                                onValueChange = {
-                                                                    observaciones = it
-                                                                },
-                                                                label = { Text("Observaciones (opcional)") },
-                                                                modifier = Modifier
-                                                                    .fillMaxWidth()
-                                                                    .padding(top = 12.dp),
-                                                                minLines = 2,
-                                                                maxLines = 4
-                                                            )
-                                                            OutlinedTextField(
-                                                                value = hora,
-                                                                onValueChange = { hora = it },
-                                                                label = { Text("Hora") },
-                                                                modifier = Modifier
-                                                                    .fillMaxWidth()
-                                                                    .padding(top = 8.dp),
-                                                                singleLine = true
-                                                            )
-                                                            Row(
-                                                                modifier = Modifier
-                                                                    .fillMaxWidth()
-                                                                    .padding(top = 24.dp),
-                                                                horizontalArrangement = Arrangement.End
-                                                            ) {
-                                                                TextButton(onClick = {
-                                                                    tareaAEditar = null
-                                                                }) {
-                                                                    Text("Cancelar")
-                                                                }
-                                                                Button(
-                                                                    onClick = {
-                                                                        if (descripcion.isNotBlank() && hora.isNotBlank()) {
-                                                                            tareas =
-                                                                                tareas.mapIndexed { i, t ->
-                                                                                    if (i == tareaAEditar) Tarea(
-                                                                                        descripcion,
-                                                                                        observaciones,
-                                                                                        hora
-                                                                                    ) else t
-                                                                                }
-                                                                            tareaAEditar = null
-                                                                        }
-                                                                    },
-                                                                    enabled = descripcion.isNotBlank() && hora.isNotBlank(),
-                                                                    modifier = Modifier.padding(
-                                                                        start = 8.dp
+                                                        Box(modifier = Modifier.fillMaxWidth()) {
+                                                            Column(modifier = Modifier.padding(12.dp)) {
+                                                                Text(
+                                                                    "Descripción: ${tarea.descripcion}",
+                                                                    fontSize = 14.sp,
+                                                                    color = Color.Black
+                                                                )
+                                                                if (tarea.observaciones.isNotBlank()) {
+                                                                    Text(
+                                                                        "Observaciones: ${tarea.observaciones}",
+                                                                        fontSize = 14.sp,
+                                                                        color = Color.Black
                                                                     )
-                                                                ) {
-                                                                    Text("Guardar")
                                                                 }
+                                                                Text(
+                                                                    "Hora: ${tarea.hora}",
+                                                                    fontSize = 14.sp,
+                                                                    color = Color.Black
+                                                                )
                                                             }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            if (tareaAEliminar != null) {
-                                                Dialog(onDismissRequest = {
-                                                    tareaAEliminar = null
-                                                }) {
-                                                    Surface(
-                                                        shape = MaterialTheme.shapes.medium,
-                                                        color = Color.White,
-                                                        shadowElevation = 8.dp,
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .padding(16.dp)
-                                                            .border(
-                                                                2.dp,
-                                                                Color.Black,
-                                                                MaterialTheme.shapes.medium
-                                                            )
-                                                    ) {
-                                                        Column(modifier = Modifier.padding(16.dp)) {
-                                                            Text(
-                                                                "¿Seguro que quieres eliminar esta tarea?",
-                                                                fontWeight = FontWeight.Bold,
-                                                                fontSize = 16.sp,
-                                                                modifier = Modifier.padding(bottom = 16.dp)
-                                                            )
-                                                            Row(
-                                                                modifier = Modifier.fillMaxWidth(),
-                                                                horizontalArrangement = Arrangement.End
-                                                            ) {
-                                                                TextButton(onClick = {
-                                                                    tareaAEliminar = null
-                                                                }) {
-                                                                    Text("Cancelar")
-                                                                }
-                                                                Button(
-                                                                    onClick = {
-                                                                        tareaAEliminar?.let { idx ->
-                                                                            tareas =
-                                                                                tareas.filterIndexed { i, _ -> i != idx }
-                                                                        }
-                                                                        tareaAEliminar = null
-                                                                    },
-                                                                    modifier = Modifier.padding(
-                                                                        start = 8.dp
-                                                                    )
-                                                                ) {
-                                                                    Text("Eliminar")
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-
-                                            if (tareaACompletar != null) {
-                                                Dialog(onDismissRequest = {
-                                                    tareaACompletar = null
-                                                }) {
-                                                    Surface(
-                                                        shape = MaterialTheme.shapes.medium,
-                                                        color = Color.White,
-                                                        shadowElevation = 8.dp,
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .padding(16.dp)
-                                                            .border(
-                                                                2.dp,
-                                                                Color.Black,
-                                                                MaterialTheme.shapes.medium
-                                                            )
-                                                    ) {
-                                                        Column(modifier = Modifier.padding(16.dp)) {
-                                                            Text(
-                                                                "Completar Tarea",
-                                                                fontWeight = FontWeight.Bold,
-                                                                fontSize = 18.sp,
-                                                                modifier = Modifier.padding(bottom = 8.dp)
-                                                            )
-
-                                                            OutlinedTextField(
-                                                                value = resolucionDescripcion,
-                                                                onValueChange = {
-                                                                    resolucionDescripcion = it
-                                                                },
-                                                                label = { Text("Resolución") },
-                                                                modifier = Modifier.fillMaxWidth(),
-                                                                minLines = 2,
-                                                                maxLines = 4
-                                                            )
-
-                                                            OutlinedTextField(
-                                                                value = resolucionHora,
-                                                                onValueChange = {
-                                                                    resolucionHora = it
-                                                                },
-                                                                label = { Text("Hora de Resolución") },
-                                                                modifier = Modifier
-                                                                    .fillMaxWidth()
-                                                                    .padding(top = 8.dp),
-                                                                singleLine = true
-                                                            )
-
                                                             Row(
                                                                 modifier = Modifier
-                                                                    .fillMaxWidth()
-                                                                    .padding(top = 24.dp),
+                                                                    .align(Alignment.TopEnd)
+                                                                    .padding(4.dp),
                                                                 horizontalArrangement = Arrangement.End
                                                             ) {
-                                                                TextButton(onClick = {
-                                                                    tareaACompletar = null
+                                                                IconButton(onClick = {
+                                                                    tareaACompletar = idx
+                                                                    val horaActual = SimpleDateFormat(
+                                                                        "HH:mm",
+                                                                        Locale.getDefault()
+                                                                    ).format(Date())
+                                                                    resolucionHora = horaActual
+                                                                    resolucionDescripcion = ""
                                                                 }) {
-                                                                    Text("Cancelar")
-                                                                }
-                                                                Button(
-                                                                    onClick = {
-                                                                        if (resolucionDescripcion.isNotBlank() && resolucionHora.isNotBlank()) {
-                                                                            tareaACompletar?.let { idx ->
-                                                                                val tarea =
-                                                                                    tareas[idx]
-                                                                                // Crear una incidencia a partir de la tarea completada
-                                                                                val nuevaIncidencia =
-                                                                                    Incidencia(
-                                                                                        descripcion = tarea.descripcion,
-                                                                                        observaciones = tarea.observaciones,
-                                                                                        hora = tarea.hora,
-                                                                                        horaFinalizacion = resolucionHora,
-                                                                                        resolucion = resolucionDescripcion,
-                                                                                        personasImplicadas = emptyList(),
-                                                                                        vehiculosImplicados = emptyList()
-                                                                                    )
-                                                                                // Añadir a la lista de incidencias
-                                                                                incidencias =
-                                                                                    incidencias + nuevaIncidencia
-                                                                                // Eliminar de la lista de tareas
-                                                                                tareas =
-                                                                                    tareas.filterIndexed { i, _ -> i != idx }
-                                                                            }
-                                                                            tareaACompletar = null
-                                                                        }
-                                                                    },
-                                                                    enabled = resolucionDescripcion.isNotBlank() && resolucionHora.isNotBlank(),
-                                                                    modifier = Modifier.padding(
-                                                                        start = 8.dp
+                                                                    Icon(
+                                                                        Icons.Default.CheckCircle,
+                                                                        contentDescription = "Completar",
+                                                                        tint = Color(0xFF4CAF50)
                                                                     )
-                                                                ) {
-                                                                    Text("Completar")
+                                                                }
+                                                                IconButton(onClick = {
+                                                                    tareaAEditar = idx
+                                                                }) {
+                                                                    Icon(
+                                                                        Icons.Default.Edit,
+                                                                        contentDescription = "Editar",
+                                                                        tint = Color(0xFF1976D2)
+                                                                    )
+                                                                }
+                                                                IconButton(onClick = {
+                                                                    tareaAEliminar = idx
+                                                                }) {
+                                                                    Icon(
+                                                                        Icons.Default.Delete,
+                                                                        contentDescription = "Eliminar",
+                                                                        tint = Color.Red
+                                                                    )
                                                                 }
                                                             }
                                                         }
@@ -815,145 +579,146 @@ fun ParteActivoScreen(
                                 }
                             }
                         }
-                    }
-                    // Sección de Incidencias
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        elevation = CardDefaults.cardElevation(2.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(0.dp)) {
-                            Row(
+
+                        item {
+                            // Sección de Incidencias
+                            Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(azulito)
-                                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                                    .clickable { setIncidenciasExpanded(!isIncidenciasExpanded) },
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(vertical = 8.dp),
+                                elevation = CardDefaults.cardElevation(2.dp)
                             ) {
-                                Text(
-                                    "Incidencias",
-                                    fontWeight = FontWeight.Bold,
-                                    color = textoBlanco,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Text(
-                                    incidencias.size.toString(),
-                                    color = textoBlanco,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
-                                Icon(
-                                    if (isIncidenciasExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                                    contentDescription = null,
-                                    tint = textoBlanco,
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
-                            }
-                            if (isIncidenciasExpanded) {
-                                if (incidencias.isEmpty()) {
-                                    Text(
-                                        "No hay incidencias registradas",
+                                Column(modifier = Modifier.padding(0.dp)) {
+                                    Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(vertical = 16.dp, horizontal = 0.dp),
-                                        color = Color.Gray
-                                    )
-                                } else {
-                                    LazyColumn(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(8.dp),
-                                        contentPadding = PaddingValues(bottom = 96.dp)
+                                            .background(azulito)
+                                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                                            .clickable { setIncidenciasExpanded(!isIncidenciasExpanded) },
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        val incidenciasOrdenadas =
-                                            incidencias.sortedBy { it.horaFinalizacion.ifBlank { it.hora } }
-                                        items(incidenciasOrdenadas.size) { idx ->
-                                            val incidencia = incidenciasOrdenadas[idx]
-                                            Card(
+                                        Text(
+                                            "Incidencias",
+                                            fontWeight = FontWeight.Bold,
+                                            color = textoBlanco,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Text(
+                                            incidencias.size.toString(),
+                                            color = textoBlanco,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(start = 8.dp)
+                                        )
+                                        Icon(
+                                            if (isIncidenciasExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                                            contentDescription = null,
+                                            tint = textoBlanco,
+                                            modifier = Modifier.padding(start = 8.dp)
+                                        )
+                                    }
+                                    if (isIncidenciasExpanded) {
+                                        if (incidencias.isEmpty()) {
+                                            Text(
+                                                "No hay incidencias registradas",
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .padding(vertical = 4.dp)
-                                                    .clickable {
-                                                        incidenciaSeleccionada = incidencia
-                                                    },
-                                                elevation = CardDefaults.cardElevation(1.dp),
-                                                colors = CardDefaults.cardColors(containerColor = Color.White)
+                                                    .padding(vertical = 16.dp, horizontal = 0.dp),
+                                                color = Color.Gray
+                                            )
+                                        } else {
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(8.dp)
                                             ) {
-                                                Box(modifier = Modifier.fillMaxWidth()) {
-                                                    Column(modifier = Modifier.padding(12.dp)) {
-                                                        Text(
-                                                            "Descripción: ${incidencia.descripcion}",
-                                                            fontSize = 14.sp,
-                                                            color = Color.Black
-                                                        )
-                                                        if (incidencia.observaciones.isNotBlank()) {
-                                                            Text(
-                                                                "Observaciones: ${incidencia.observaciones}",
-                                                                fontSize = 14.sp,
-                                                                color = Color.Black
-                                                            )
-                                                        }
-                                                        Text(
-                                                            "Hora creación: ${incidencia.hora}",
-                                                            fontSize = 14.sp,
-                                                            color = Color.Black
-                                                        )
-                                                        if (incidencia.horaFinalizacion.isNotBlank()) {
-                                                            Text(
-                                                                "Hora finalización: ${incidencia.horaFinalizacion}",
-                                                                fontSize = 14.sp,
-                                                                color = Color.Black
-                                                            )
-                                                        }
-                                                        if (incidencia.resolucion.isNotBlank()) {
-                                                            Text(
-                                                                "Resolución: ${incidencia.resolucion}",
-                                                                fontSize = 14.sp,
-                                                                color = Color.Black,
-                                                                fontWeight = FontWeight.Bold
-                                                            )
-                                                        }
-
-                                                        // Mostrar solo el número de personas y vehículos implicados
-                                                        Spacer(modifier = Modifier.height(8.dp))
-                                                        Text(
-                                                            "Personas implicadas: ${incidencia.personasImplicadas.size}",
-                                                            fontSize = 14.sp,
-                                                            color = Color.Black,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                        Text(
-                                                            "Vehículos implicados: ${incidencia.vehiculosImplicados.size}",
-                                                            fontSize = 14.sp,
-                                                            color = Color.Black,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                    }
-                                                    Row(
+                                                val incidenciasOrdenadas =
+                                                    incidencias.sortedBy { it.horaFinalizacion.ifBlank { it.hora } }
+                                                incidenciasOrdenadas.forEach { incidencia ->
+                                                    Card(
                                                         modifier = Modifier
-                                                            .align(Alignment.TopEnd)
-                                                            .padding(4.dp),
-                                                        horizontalArrangement = Arrangement.End
+                                                            .fillMaxWidth()
+                                                            .padding(vertical = 4.dp)
+                                                            .clickable {
+                                                                incidenciaSeleccionada = incidencia
+                                                            },
+                                                        elevation = CardDefaults.cardElevation(1.dp),
+                                                        colors = CardDefaults.cardColors(containerColor = Color.White)
                                                     ) {
-                                                        IconButton(onClick = {
-                                                            incidenciaAEditar = incidencia
-                                                        }) {
-                                                            Icon(
-                                                                Icons.Default.Edit,
-                                                                contentDescription = "Editar",
-                                                                tint = Color(0xFF1976D2)
-                                                            )
-                                                        }
-                                                        IconButton(onClick = {
-                                                            incidenciaAEliminar = incidencia
-                                                        }) {
-                                                            Icon(
-                                                                Icons.Default.Delete,
-                                                                contentDescription = "Eliminar",
-                                                                tint = Color.Red
-                                                            )
+                                                        Box(modifier = Modifier.fillMaxWidth()) {
+                                                            Column(modifier = Modifier.padding(12.dp)) {
+                                                                Text(
+                                                                    "Descripción: ${incidencia.descripcion}",
+                                                                    fontSize = 14.sp,
+                                                                    color = Color.Black
+                                                                )
+                                                                if (incidencia.observaciones.isNotBlank()) {
+                                                                    Text(
+                                                                        "Observaciones: ${incidencia.observaciones}",
+                                                                        fontSize = 14.sp,
+                                                                        color = Color.Black
+                                                                    )
+                                                                }
+                                                                Text(
+                                                                    "Hora creación: ${incidencia.hora}",
+                                                                    fontSize = 14.sp,
+                                                                    color = Color.Black
+                                                                )
+                                                                if (incidencia.horaFinalizacion.isNotBlank()) {
+                                                                    Text(
+                                                                        "Hora finalización: ${incidencia.horaFinalizacion}",
+                                                                        fontSize = 14.sp,
+                                                                        color = Color.Black
+                                                                    )
+                                                                }
+                                                                if (incidencia.resolucion.isNotBlank()) {
+                                                                    Text(
+                                                                        "Resolución: ${incidencia.resolucion}",
+                                                                        fontSize = 14.sp,
+                                                                        color = Color.Black,
+                                                                        fontWeight = FontWeight.Bold
+                                                                    )
+                                                                }
+
+                                                                // Mostrar solo el número de personas y vehículos implicados
+                                                                Spacer(modifier = Modifier.height(8.dp))
+                                                                Text(
+                                                                    "Personas implicadas: ${incidencia.personasImplicadas.size}",
+                                                                    fontSize = 14.sp,
+                                                                    color = Color.Black,
+                                                                    fontWeight = FontWeight.Bold
+                                                                )
+                                                                Text(
+                                                                    "Vehículos implicados: ${incidencia.vehiculosImplicados.size}",
+                                                                    fontSize = 14.sp,
+                                                                    color = Color.Black,
+                                                                    fontWeight = FontWeight.Bold
+                                                                )
+                                                            }
+                                                            Row(
+                                                                modifier = Modifier
+                                                                    .align(Alignment.TopEnd)
+                                                                    .padding(4.dp),
+                                                                horizontalArrangement = Arrangement.End
+                                                            ) {
+                                                                IconButton(onClick = {
+                                                                    incidenciaAEditar = incidencia
+                                                                }) {
+                                                                    Icon(
+                                                                        Icons.Default.Edit,
+                                                                        contentDescription = "Editar",
+                                                                        tint = Color(0xFF1976D2)
+                                                                    )
+                                                                }
+                                                                IconButton(onClick = {
+                                                                    incidenciaAEliminar = incidencia
+                                                                }) {
+                                                                    Icon(
+                                                                        Icons.Default.Delete,
+                                                                        contentDescription = "Eliminar",
+                                                                        tint = Color.Red
+                                                                    )
+                                                                }
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -962,87 +727,14 @@ fun ParteActivoScreen(
                                     }
                                 }
                             }
+                        }
+                        // Add extra spacer at the end so content doesn't hide under bottom bar
+                        item {
+                            Spacer(modifier = Modifier.height(96.dp))
                         }
                     }
                 }
-                // Bottom fijo
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .background(azulito)
-                        .height(110.dp)
-                        .padding(horizontal = 4.dp)
-                        .padding(WindowInsets.navigationBars.asPaddingValues()),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Button(
-                        onClick = { showDialog = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = azulito),
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 4.dp),
-                        enabled = !esFinalizado
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.List,
-                                contentDescription = null,
-                                tint = textoBlanco
-                            )
-                            Text(
-                                "Nueva Tarea",
-                                color = textoBlanco,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        }
-                    }
-                    Button(
-                        onClick = { showIncidenciaDialog = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = azulito),
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 4.dp),
-                        enabled = !esFinalizado
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = null,
-                                tint = textoBlanco
-                            )
-                            Text(
-                                "Incidencia",
-                                color = textoBlanco,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        }
-                    }
-                    Button(
-                        onClick = { showFinalizarConfirm = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = azulito),
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 4.dp),
-                        enabled = !esFinalizado
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = textoBlanco
-                            )
-                            Text(
-                                "Finalizar",
-                                color = textoBlanco,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        }
-                    }
-                    // Diálogo de confirmación para finalizar
+                    // Diálogo de confirmación para finalizar (mantenido fuera del bottomBar)
                     if (showFinalizarConfirm) {
                         Dialog(onDismissRequest = { showFinalizarConfirm = false }) {
                             Surface(
@@ -2706,5 +2398,5 @@ fun ParteActivoScreen(
             }
         }
     }
-}
+
 
