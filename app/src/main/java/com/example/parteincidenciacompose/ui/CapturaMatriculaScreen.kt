@@ -13,10 +13,18 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.ExperimentalGetImage
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -40,16 +48,22 @@ fun CapturaMatriculaScreen(onBack: () -> Unit = {}, onMatriculaDetected: (String
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     var processing by remember { mutableStateOf(false) }
 
+    // initialize permission state
     LaunchedEffect(Unit) {
         hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED
     }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { granted -> hasCameraPermission = granted }
+    )
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Capturar matrícula") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Volver") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver") }
                 }
             )
         }
@@ -60,16 +74,20 @@ fun CapturaMatriculaScreen(onBack: () -> Unit = {}, onMatriculaDetected: (String
 
             if (!hasCameraPermission) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("La app necesita permiso de cámara para capturar matrículas")
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = {
-                            // Request permission via ActivityResult from the host activity; for now ask user to grant manually
-                        }) { Text("Conceder permiso (desde ajustes)") }
+                    Card(modifier = Modifier.padding(16.dp), elevation = CardDefaults.cardElevation(6.dp)) {
+                        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("La app necesita permiso de cámara para capturar matrículas")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            val azulito = androidx.compose.ui.graphics.Color(0xFF1976D2)
+                            Button(onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) }, colors = ButtonDefaults.buttonColors(containerColor = azulito)) {
+                                Text("Conceder permiso", color = androidx.compose.ui.graphics.Color.White)
+                            }
+                        }
                     }
                 }
             } else {
                 Box(modifier = Modifier.fillMaxSize()) {
+                    var takePictureLambda: (() -> Unit)? = null
                     CameraPreview(
                         onImageCaptured = { imageProxy ->
                             if (processing) { imageProxy.close(); return@CameraPreview }
@@ -81,8 +99,24 @@ fun CapturaMatriculaScreen(onBack: () -> Unit = {}, onMatriculaDetected: (String
                                 }
                             }
                         },
-                        cameraExecutor = cameraExecutor
+                        cameraExecutor = cameraExecutor,
+                        onTakePictureReady = { lp -> takePictureLambda = lp }
                     )
+
+                    // Capture button overlay (styled like app buttons)
+                    val azulito = androidx.compose.ui.graphics.Color(0xFF1976D2)
+                    Button(
+                        onClick = { takePictureLambda?.invoke() },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .navigationBarsPadding()
+                            .padding(bottom = 24.dp),
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(containerColor = azulito),
+                        contentPadding = PaddingValues(18.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Capturar", tint = androidx.compose.ui.graphics.Color.White)
+                    }
                 }
             }
         }
@@ -90,9 +124,13 @@ fun CapturaMatriculaScreen(onBack: () -> Unit = {}, onMatriculaDetected: (String
 }
 
 @Composable
-fun CameraPreview(onImageCaptured: (ImageProxy) -> Unit, cameraExecutor: java.util.concurrent.Executor) {
+fun CameraPreview(
+    onImageCaptured: (ImageProxy) -> Unit,
+    cameraExecutor: java.util.concurrent.Executor,
+    onTakePictureReady: (takePicture: () -> Unit) -> Unit = {}
+) {
     val context = LocalContext.current
-    val lifecycleOwner = rememberUpdatedState(LocalContext.current as androidx.lifecycle.LifecycleOwner)
+    val lifecycleOwner = LocalLifecycleOwner.current
     AndroidView(factory = { ctx ->
         val previewView = PreviewView(ctx)
         val cameraProviderFuture: ListenableFuture<ProcessCameraProvider> = ProcessCameraProvider.getInstance(ctx)
@@ -102,27 +140,33 @@ fun CameraPreview(onImageCaptured: (ImageProxy) -> Unit, cameraExecutor: java.ut
             val imageCapture = ImageCapture.Builder().build()
             try {
                 cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(lifecycleOwner.value, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture)
+                cameraProvider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture)
             } catch (e: Exception) {
                 Log.e("CameraPreview", "Error binding camera use cases", e)
             }
-            // Simple capture button overlay logic: when user taps preview, capture
-            previewView.setOnClickListener {
-                imageCapture.takePicture(cameraExecutor, object : ImageCapture.OnImageCapturedCallback() {
-                    override fun onCaptureSuccess(image: ImageProxy) {
-                        onImageCaptured(image)
-                    }
+            // Expose a takePicture lambda for the UI to call
+            val takePicture = {
+                try {
+                    imageCapture.takePicture(cameraExecutor, object : ImageCapture.OnImageCapturedCallback() {
+                        override fun onCaptureSuccess(image: ImageProxy) {
+                            onImageCaptured(image)
+                        }
 
-                    override fun onError(exception: ImageCaptureException) {
-                        Log.e("CameraPreview", "Image capture failed", exception)
-                    }
-                })
+                        override fun onError(exception: ImageCaptureException) {
+                            Log.e("CameraPreview", "Image capture failed", exception)
+                        }
+                    })
+                } catch (e: Exception) {
+                    Log.e("CameraPreview", "takePicture error", e)
+                }
             }
+            onTakePictureReady(takePicture as () -> Unit)
         }, ContextCompat.getMainExecutor(ctx))
         previewView
     }, modifier = Modifier.fillMaxSize())
 }
 
+@androidx.annotation.OptIn(ExperimentalGetImage::class)
 private fun processImageProxy(context: Context, imageProxy: ImageProxy, onResult: (String?) -> Unit) {
     try {
         val mediaImage = imageProxy.image

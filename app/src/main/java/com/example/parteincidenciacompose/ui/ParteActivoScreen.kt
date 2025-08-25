@@ -389,7 +389,7 @@ fun ParteActivoScreen(
                         .fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Datos principales (ahora en Card visualmente atractiva)
+                    // Tarjeta de resumen superior compacta: dos filas para ahorrar espacio vertical
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -400,46 +400,50 @@ fun ParteActivoScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
-                            Text("Unidad: $unidadState", fontSize = 14.sp, color = textoBlanco)
-                            Text("Agente: $agenteState", fontSize = 14.sp, color = textoBlanco)
-                            Text("Vehículo: $vehiculoState", fontSize = 14.sp, color = textoBlanco)
+                            // Primera fila: Unidad | Agente | Vehículo (compacta)
                             Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    "Kms iniciales: $kmsState",
-                                    fontSize = 14.sp,
-                                    color = textoBlanco
-                                )
-                            }
-                            if (esFinalizado) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        "Kms finales: $kmsFinalesState",
-                                        fontSize = 14.sp,
-                                        color = textoBlanco
-                                    )
+                                Column(modifier = Modifier.weight(1f).padding(end = 6.dp)) {
+                                    Text("Unidad", fontSize = 11.sp, color = textoBlanco.copy(alpha = 0.9f))
+                                    Text(unidadState, fontSize = 13.sp, color = textoBlanco, fontWeight = FontWeight.SemiBold)
+                                }
+                                Column(modifier = Modifier.weight(1f).padding(horizontal = 6.dp)) {
+                                    Text("Agente", fontSize = 11.sp, color = textoBlanco.copy(alpha = 0.9f))
+                                    Text(agenteState, fontSize = 13.sp, color = textoBlanco, fontWeight = FontWeight.SemiBold)
+                                }
+                                Column(modifier = Modifier.weight(1f).padding(start = 6.dp)) {
+                                    Text("Vehículo", fontSize = 11.sp, color = textoBlanco.copy(alpha = 0.9f))
+                                    Text(vehiculoState, fontSize = 13.sp, color = textoBlanco, fontWeight = FontWeight.SemiBold)
                                 }
                             }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            // Segunda fila: Kms iniciales | Kms finales (si aplica) | Inicio
                             Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    "Inicio: $fechaHoraState",
-                                    fontSize = 14.sp,
-                                    color = textoBlanco
-                                )
+                                Column(modifier = Modifier.weight(1f).padding(end = 6.dp)) {
+                                    Text("Kms iniciales", fontSize = 11.sp, color = textoBlanco.copy(alpha = 0.9f))
+                                    Text(kmsState, fontSize = 13.sp, color = textoBlanco)
+                                }
+                                if (esFinalizado) {
+                                    Column(modifier = Modifier.weight(1f).padding(horizontal = 6.dp)) {
+                                        Text("Kms finales", fontSize = 11.sp, color = textoBlanco.copy(alpha = 0.9f))
+                                        Text(kmsFinalesState, fontSize = 13.sp, color = textoBlanco)
+                                    }
+                                } else {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                                Column(modifier = Modifier.weight(1f).padding(start = 6.dp)) {
+                                    Text("Inicio", fontSize = 11.sp, color = textoBlanco.copy(alpha = 0.9f))
+                                    Text(fechaHoraState, fontSize = 13.sp, color = textoBlanco)
+                                }
                             }
                         }
                     }

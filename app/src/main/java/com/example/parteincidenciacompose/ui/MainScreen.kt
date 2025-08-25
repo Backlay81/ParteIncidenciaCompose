@@ -19,7 +19,7 @@ fun MainScreen(
     onNuevoParteClick: () -> Unit,
     onVerPartesAnterioresClick: () -> Unit,
     onHorasClick: () -> Unit,
-    onCapturaMatriculaClick: () -> Unit
+    onTomaMatriculasClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -114,20 +114,21 @@ fun MainScreen(
                 shape = MaterialTheme.shapes.medium
             ) {
                 Button(
-                    onClick = onCapturaMatriculaClick,
+                    onClick = onTomaMatriculasClick,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = azulito)
                 ) {
                     Text(
-                        text = "Capturar Matrícula",
+                        text = "Toma de matrículas",
                         color = textoBlanco,
                         fontSize = 18.sp,
                         modifier = Modifier.padding(8.dp)
                     )
                 }
             }
+            // Rellenar plantilla integrado dentro de 'Toma de matrículas'
         }
     }
 }

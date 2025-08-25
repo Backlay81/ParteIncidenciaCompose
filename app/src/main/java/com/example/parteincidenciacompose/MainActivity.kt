@@ -4,17 +4,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.Text
-import com.example.parteincidenciacompose.ui.MainScreen
-import com.example.parteincidenciacompose.ui.theme.ParteIncidenciaComposeTheme
-import com.example.parteincidenciacompose.ui.NuevoParteScreen
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.parteincidenciacompose.MainActivity.Companion.partesAnteriores
+import com.example.parteincidenciacompose.ui.MainScreen
+import com.example.parteincidenciacompose.ui.theme.ParteIncidenciaComposeTheme
 
 class MainActivity : ComponentActivity() {
     companion object {
@@ -42,15 +42,96 @@ fun NavHostScreen() {
                 onNuevoParteClick = { navController.navigate("nuevo_parte") },
                 onVerPartesAnterioresClick = { navController.navigate("partes_anteriores") },
                 onHorasClick = { navController.navigate("horas") },
-                onCapturaMatriculaClick = { navController.navigate("captura_matricula") }
+                onTomaMatriculasClick = { navController.navigate("toma_matriculas") }
             )
         }
+
+        composable("toma_matriculas") {
+            androidx.compose.material3.Surface(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
+                androidx.compose.foundation.layout.Column(
+                    modifier = androidx.compose.ui.Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+                ) {
+                    val azulito = androidx.compose.ui.graphics.Color(0xFF1976D2)
+
+                    androidx.compose.material3.Card(
+                        modifier = androidx.compose.ui.Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
+                        elevation = androidx.compose.material3.CardDefaults.cardElevation(4.dp),
+                        shape = androidx.compose.material3.MaterialTheme.shapes.medium
+                    ) {
+                        androidx.compose.material3.Button(
+                            onClick = { navController.navigate("captura_matricula") },
+                            modifier = androidx.compose.ui.Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = azulito)
+                        ) {
+                            androidx.compose.material3.Text(
+                                text = "Usar cámara",
+                                color = androidx.compose.ui.graphics.Color.White,
+                                modifier = androidx.compose.ui.Modifier.padding(8.dp)
+                            )
+                        }
+                    }
+
+                    androidx.compose.material3.Card(
+                        modifier = androidx.compose.ui.Modifier
+                            .fillMaxWidth(),
+                        elevation = androidx.compose.material3.CardDefaults.cardElevation(4.dp),
+                        shape = androidx.compose.material3.MaterialTheme.shapes.medium
+                    ) {
+                        androidx.compose.material3.Button(
+                            onClick = { navController.navigate("rellenar_plantilla") },
+                            modifier = androidx.compose.ui.Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = azulito)
+                        ) {
+                            androidx.compose.material3.Text(
+                                text = "Usar plantilla",
+                                color = androidx.compose.ui.graphics.Color.White,
+                                modifier = androidx.compose.ui.Modifier.padding(8.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
         composable("captura_matricula") {
+            val ctx = androidx.compose.ui.platform.LocalContext.current
             com.example.parteincidenciacompose.ui.CapturaMatriculaScreen(
                 onBack = { navController.popBackStack() },
                 onMatriculaDetected = { matricula ->
-                    // For now just navigate back; later we can pass data via Nav args or shared ViewModel
-                    navController.popBackStack()
+                    // Save detected matrícula into filled_values.json under first field labelled 'Matrícula'
+                    try {
+                        val am = ctx.assets
+                        val jsonStr = am.open("field_map.json").bufferedReader().use { it.readText() }
+                        val fm = org.json.JSONObject(jsonStr)
+                        val fields = fm.optJSONArray("fields") ?: org.json.JSONArray()
+                        var targetPdfName: String? = null
+                        for (i in 0 until fields.length()) {
+                            val f = fields.optJSONObject(i) ?: continue
+                            val label = f.optString("label", "")
+                            if (label.contains("Matrícula", ignoreCase = true) && targetPdfName == null) {
+                                targetPdfName = f.optString("pdfName")
+                            }
+                        }
+                        if (targetPdfName != null) {
+                            val outObj = org.json.JSONObject()
+                            outObj.put(targetPdfName, matricula)
+                            ctx.openFileOutput("filled_values.json", android.content.Context.MODE_PRIVATE).use { fos ->
+                                fos.write(outObj.toString(2).toByteArray())
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                    navController.navigate("rellenar_plantilla")
                 }
             )
         }
@@ -66,6 +147,11 @@ fun NavHostScreen() {
                         "parte_activo?unidad=${unidad}&agente=${agente}&vehiculo=${vehiculo}&kms=${kms}"
                     )
                 },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("rellenar_plantilla") {
+            com.example.parteincidenciacompose.ui.RellenarPlantillaScreen(
                 onBack = { navController.popBackStack() }
             )
         }
